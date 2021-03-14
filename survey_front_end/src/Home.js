@@ -7,7 +7,7 @@ class Home extends Component {
 	render() {
 		return (
 			<div>
-				<p>Welcome to the Survey Application</p>
+				<p>Welcome to the Survey Application!</p>
 				<img src={logo} className="App-logo" alt="logo" />
 			</div>
 		);

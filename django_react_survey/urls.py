@@ -22,4 +22,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^api/surveys/$', views.survey_list),
     re_path(r'^api/survey/([0-9])$', views.survey_detail),
+    re_path(r'^api/surveys/stats/$', views.stats),
+    re_path(r'^api/surveys/singleLineExport/$', views.singleLineExport),
+    re_path(r'^api/surveys/multiLineExport/$', views.multiLineExport),
+    
 ]

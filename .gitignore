@@ -106,3 +106,4 @@ dist
 # JavaScript
 node_modules/
 build/ # Webpack build output
+*.pyc

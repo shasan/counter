@@ -5,6 +5,7 @@ from rest_framework import status
 from django.shortcuts import render
 from .models import Survey
 from .serializers import *
+from django.db.models import Count, Case, When
 
 # For getting the list of all surveys
 @api_view(['GET', 'POST'])
@@ -25,6 +26,31 @@ def survey_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # TODO: Create the stats endpoints for offering the CSV dumps
+@api_view(['GET'])
+def stats(request):
+    #Get our four data sets
+    spotify_data = Survey.objects.all().aggregate(spotify_customer=Count(Case(When(spotify_customer=True, then=1)))).get('spotify_customer')
+    google_data = Survey.objects.all().aggregate(google_music_customer=Count(Case(When(google_music_customer=True, then=1)))).get("google_music_customer")
+    pandora_data = Survey.objects.all().aggregate(pandora_customer=Count(Case(When(pandora_customer=True, then=1)))).get("pandora_customer")
+    other_data = Survey.objects.all().aggregate(other_customer=Count(Case(When(other_customer=True, then=1)))).get("other_customer")
+
+    #put our collected data into a map for serializing and whatnot
+    returnedData = {
+        "spotify":spotify_data,
+        "google":google_data,
+        "pandora":pandora_data,
+        "other":other_data
+    }
+    
+    #return our serialized data
+    return Response(returnedData)
+
+def singleLineExport(request):
+    pass
+
+def multiLineExport(request):
+    pass
+
 
 # For updating a survey (or deleting one altogether, which isn't really needed)
 @api_view(['PUT', 'DELETE'])
