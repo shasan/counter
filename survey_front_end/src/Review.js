@@ -49,8 +49,24 @@ const Review = ({ setForm, formData, navigation }) => {
 		var outputString = `Google: ${resp.data.google} Spotify: ${resp.data.spotify} Pandora: ${resp.data.pandora} Other: ${resp.data.other}`;
 		setStats({name:'stats',value:outputString});
 	});
+
   },[]);
   
+  function handleDownloadClick(exportType, e) {
+    e.preventDefault();
+    axios({
+	  url: API_URL + exportType,
+	  method: 'GET',
+	  responseType: 'blob', // important
+	}).then((response) => {
+	  const url = window.URL.createObjectURL(new Blob([response.data]));
+	  const link = document.createElement('a');
+	  link.href = url;
+	  link.setAttribute('download', 'file.csv');
+	  document.body.appendChild(link);
+	  link.click();
+	});
+  }
 
   return (
     <div className="form">
@@ -69,8 +85,8 @@ const Review = ({ setForm, formData, navigation }) => {
 	  {stats.value}
 	  </div>
       <div>
-        <button onClick={() => go("submit")}>Single Line CSV</button>
-		<button onClick={() => go("submit")}>Multi Line CSV</button>
+        <button onClick={(e) => handleDownloadClick('singleLineExport/',e)}>Single Line CSV</button>
+		<button onClick={(e) => handleDownloadClick('multiLineExport/',e)}>Multi Line CSV</button>
 	  </div>
     </div>
   );

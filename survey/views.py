@@ -6,6 +6,9 @@ from django.shortcuts import render
 from .models import Survey
 from .serializers import *
 from django.db.models import Count, Case, When
+import csv
+from django.http import HttpResponse
+
 
 # For getting the list of all surveys
 @api_view(['GET', 'POST'])
@@ -25,9 +28,7 @@ def survey_list(request):
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# TODO: Create the stats endpoints for offering the CSV dumps
-@api_view(['GET'])
-def stats(request):
+def getCounts():
     #Get our four data sets
     spotify_data = Survey.objects.all().aggregate(spotify_customer=Count(Case(When(spotify_customer=True, then=1)))).get('spotify_customer')
     google_data = Survey.objects.all().aggregate(google_music_customer=Count(Case(When(google_music_customer=True, then=1)))).get("google_music_customer")
@@ -41,17 +42,53 @@ def stats(request):
         "pandora":pandora_data,
         "other":other_data
     }
-    
+    return returnedData
+
+@api_view(['GET'])
+def stats(request):
+    data = getCounts()
     #return our serialized data
-    return Response(returnedData)
+    return Response(data)
 
+#collect a set of values to export as a single line CSV
 def singleLineExport(request):
-    pass
-
+    # total submission count
+    numSubmissions = Survey.objects.all().count()
+    # total counts for each source
+    counts = getCounts()
+    spotify_count = counts.get("spotify")
+    google_count = counts.get("google")
+    pandora_count = counts.get("pandora")
+    other_count = counts.get("other")
+    
+    # percentage of clicks for each source
+    percent_spotify = spotify_count / numSubmissions
+    percent_google = google_count / numSubmissions
+    percent_pandora = pandora_count / numSubmissions
+    percent_other = other_count / numSubmissions
+    #generate our csv output
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+    writer = csv.writer(response)
+    writer.writerow([numSubmissions, spotify_count, google_count, pandora_count, other_count, percent_spotify, percent_google, percent_pandora, percent_other])
+    return response
+    
+#collect all data for a multiline csv export
 def multiLineExport(request):
-    pass
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+    writer = csv.writer(response)
+    #output the first row (headers)
+    writer.writerow(['First Name', 'Last Name', 'Email', 'Spotify', 'Google', 'Pandora', 'Other'])
+    #collect all the remaining data and loop through/write
+    data = Survey.objects.all()
+    output=[]
+    for entry in data:
+        output.append([entry.first_name, entry.last_name, entry.email, entry.spotify_customer, entry.google_music_customer, entry.pandora_customer, entry.other_customer])
 
-
+    writer.writerows(output)
+    return response
+    
 # For updating a survey (or deleting one altogether, which isn't really needed)
 @api_view(['PUT', 'DELETE'])
 def survey_detail(request, pk):
